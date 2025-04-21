@@ -1,17 +1,29 @@
 ---
 layout: post
-title:  "Figure With A Caption"
-date:   2014-12-12
+title:  "Potentially Unwanted Application: OneStart"
+date:   2025-02-20
 ---
 
 
 <p class="intro"><span class="dropcap">L</span>orem ipsum thor smash liege-bastogne-liege landbouwkrediet ombregt krabbe, rouleur derby is for lovers bonk giro gilbert bidon. Driedaagse de panne-koksijde monte paschi eroica, nevele gimondi berendries off the back cassette tenbosse.</p>
 
-Bahamontes lanterne rouge normandie belgium. Fred paris-nice arrivere, for omnium commissaire ronde van vlaanderen horizontally stiff but vertically compliant muur, valkenberg jens paris-roubaix. Meyrueis belleville cavendish bianchi, rochefort echelon in soigneur ten dam omloop het volk, bettini aerts! Tour de mont aigoual cat among the pigeons rekelberg omloop het nieuwsblad paris-nice, dwars door vlaanderen coppi the colnago knockteberg anduze.
+I have done the analysis for OneStart samples thoroughly. I decided to analyze 2 versions of OneStart.
+OneStart Analysis both older and latest samples
+
+Older sample: OneStartInstaller-v1.3.141.0.msi (152c23d1e4411e9c1cf17cad5e2b14a07b6e561f58355f1f9490cb82ae96b52c)
+
+Latest sample: OneStartInstaller-v5.5.249.0.msi (c571c75b1878c02f801ef1e953176c1e7db1ca2c9809811637a44e5a98d228cd)
+
+I did the reverse of the .msi by doing the static analysis first and then proceeded with dynamic analysis.
+
+Older sample: OneStartInstaller-v1.3.141.0.msi (152c23d1e4411e9c1cf17cad5e2b14a07b6e561f58355f1f9490cb82ae96b52c)
+
+Let's start with the static analysis first. For msi, we can use a tool called msidump and we can see the attributes of the msi. On the customAction, I noticed that it would run PowerShell script embedded in the msi. So, what does it do?
+
 
 <figure>
-	<img src="/assets/img/touring.jpg" alt=""> 
-	<figcaption>Fig1. - This is an example figcaption</figcaption>
+	<img src="/assets/img/OneStartAnalysisImage/CustomAction_1.png" alt=""> 
+	<figcaption>CustomAction in .msi file</figcaption>
 </figure>
 
 {%- highlight html -%}

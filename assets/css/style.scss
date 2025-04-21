@@ -32,4 +32,16 @@
 	@import "breakpoints/1200up";
 }
 
+/* Add this to the end of assets/css/style.scss */
+.dark {
+	body {
+	  background-color: black;
+	  color: white;
+	}
+	.content:after,
+	.post .featuredImage:before {
+	  background: black;
+	}
+  }
+  
 // If IE support is needed you can add them here or create another stylesheet for specific IE fixes
