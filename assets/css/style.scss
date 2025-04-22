@@ -43,5 +43,29 @@
 	  background: black;
 	}
   }
+
+/***************
+PAGE STYLES
+***************/
+
+.pageTitle {
+	font-size: clamp(1.8rem, 5vw, 3rem);
+	text-align: center;
+	margin: 2rem auto;
+	padding: 0 20px; /* Balanced side padding */
+	max-width: 880px; /* Match content width */
+	width: 100%;
+	box-sizing: border-box; /* Include padding in width */
+  }
   
+  /***************
+  POST STYLING
+  ***************/
+  
+  .post {
+	max-width: 880px;
+	margin: 0 auto;
+	padding: 0 20px; /* Match title padding */
+	box-sizing: border-box;
+  }
 // If IE support is needed you can add them here or create another stylesheet for specific IE fixes
