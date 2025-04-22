@@ -1,4 +1,4 @@
-![preview Long Haul](/preview.jpg)
+<!-- ![preview Long Haul](/preview.jpg)
 
 Long Haul is a minimal jekyll theme built with SASS and focuses on long form blog posts. It is meant to be used as a starting point for a jekyll blog/website.
 
@@ -59,4 +59,4 @@ To use latest Jekyll and Jekyll Sass Converter on GitHub Pages, <a href="https:/
 
 ## License
 
-This is [MIT](LICENSE) with no added caveats, so feel free to use this Jekyll theme on your site without linking back to me or using a disclaimer.
+This is [MIT](LICENSE) with no added caveats, so feel free to use this Jekyll theme on your site without linking back to me or using a disclaimer. -->
