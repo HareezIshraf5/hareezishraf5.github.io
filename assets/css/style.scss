@@ -68,4 +68,93 @@ PAGE STYLES
 	padding: 0 20px; /* Match title padding */
 	box-sizing: border-box;
   }
+
+  /* ======================
+   Dark Mode Toggle Styles
+   ====================== */
+.dark-mode-toggle-wrapper {
+    margin-left: 710px; /* Creates space before the toggle */
+	position: relative;
+    top: -70px; /* Adjust this value as needed */
+
+    // display: inline-block; /* Ensures proper spacing behavior */
+}
+
+#theme-toggle {
+	background: #f0f0f0;
+	border: 1px solid #ddd;
+	border-radius: 20px;
+	padding: 5px 12px;
+	font-size: 0.9rem;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	position: relative;
+	min-width: 80px;
+	text-align: center;
+  }
+  
+  #theme-toggle .dark-text {
+	display: none;
+  }
+  
+  /* Dark mode styles */
+  .dark #theme-toggle {
+	background: #333;
+	border-color: #555;
+  }
+  
+  .dark #theme-toggle .light-text {
+	display: none;
+  }
+  
+  .dark #theme-toggle .dark-text {
+	display: inline;
+	color: #fff;
+  }
+
+/* Mobile styles */
+@media (max-width: 768px) {
+    .dark-mode-item {
+        display: flex;
+        align-items: center;
+        height: 44px; /* Standard touch target size */
+    }
+    
+    #theme-toggle {
+        font-size: 18px;
+        background: transparent;
+        border: none;
+        padding: 0 15px;
+        margin: 0;
+        cursor: pointer;
+        color: inherit;
+    }
+}
+
+/* Desktop styles */
+@media (min-width: 769px) {
+    .dark-mode-item {
+        margin-left: 15px;
+    }
+    
+    #theme-toggle {
+        font-size: 16px;
+        transition: transform 0.2s;
+    }
+    
+    #theme-toggle:hover {
+        transform: scale(1.1);
+    }
+}
+
+/* Add margin to the dark mode toggle only */
+.noList li:last-child {
+    padding-left: 25px; /* Adjust this value as needed */
+}
+
+/* Optional: Keep toggle aligned vertically */
+.noList li {
+    display: inline-flex;
+    align-items: center;
+}
 // If IE support is needed you can add them here or create another stylesheet for specific IE fixes

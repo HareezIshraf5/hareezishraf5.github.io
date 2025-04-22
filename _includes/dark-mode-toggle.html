@@ -1,7 +1,16 @@
 <button id="theme-toggle" aria-label="Toggle dark mode">🌓</button>
+
+<!-- <div class="dark-mode-toggle-wrapper"> -->
+<!-- <button id="theme-toggle" aria-label="Toggle dark mode">
+    <span class="light-text">Light On</span>
+    <span class="dark-text">Dark On</span>
+</button> -->
+<!-- </div> -->
+
 <script>
   const toggle = document.getElementById('theme-toggle');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
   
   // Set initial theme
   if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && prefersDark)) {
