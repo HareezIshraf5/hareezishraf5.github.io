@@ -5,18 +5,18 @@ date:   2025-02-20
 ---
 
 
-<p class="intro"><span class="dropcap">L</span>orem ipsum thor smash liege-bastogne-liege landbouwkrediet ombregt krabbe, rouleur derby is for lovers bonk giro gilbert bidon. Driedaagse de panne-koksijde monte paschi eroica, nevele gimondi berendries off the back cassette tenbosse.</p>
+<p class="intro"><span class="dropcap">O</span>neStart is one of those annoying programs that gets installed without you really wanting it. You download some free software, click through the installer too fast and suddenly your browser has a new homepage and you're seeing extra ads everywhereIt is not exactly malware but it is definitely unwanted</p>
 
-I have done the analysis for OneStart samples thoroughly. I decided to analyze 2 versions of OneStart.
+In this post, I have done the analysis for OneStart samples thoroughly. I decided to analyze 2 versions of OneStart.
 OneStart Analysis both older and latest samples
 
-Older sample: OneStartInstaller-v1.3.141.0.msi (152c23d1e4411e9c1cf17cad5e2b14a07b6e561f58355f1f9490cb82ae96b52c)
+Older sample: OneStartInstaller-v1.3.141.0.msi (**SHA256:152c23d1e4411e9c1cf17cad5e2b14a07b6e561f58355f1f9490cb82ae96b52c**)
 
-Latest sample: OneStartInstaller-v5.5.249.0.msi (c571c75b1878c02f801ef1e953176c1e7db1ca2c9809811637a44e5a98d228cd)
+Latest sample: OneStartInstaller-v5.5.249.0.msi (**SHA256:c571c75b1878c02f801ef1e953176c1e7db1ca2c9809811637a44e5a98d228cd**)
 
 I did the reverse of the .msi by doing the static analysis first and then proceeded with dynamic analysis.
 
-Older sample: OneStartInstaller-v1.3.141.0.msi (152c23d1e4411e9c1cf17cad5e2b14a07b6e561f58355f1f9490cb82ae96b52c)
+**Older sample: OneStartInstaller-v1.3.141.0.msi (SHA256:152c23d1e4411e9c1cf17cad5e2b14a07b6e561f58355f1f9490cb82ae96b52c)**
 
 Let's start with the static analysis first. For msi, we can use a tool called msidump and we can see the attributes of the msi. On the customAction, I noticed that it would run PowerShell script embedded in the msi. So, what does it do?
 
@@ -26,17 +26,147 @@ Let's start with the static analysis first. For msi, we can use a tool called ms
 	<figcaption>CustomAction in .msi file</figcaption>
 </figure>
 
-{%- highlight html -%}
-<figure>
-	<img src="/assets/img/touring.jpg" alt=""> 
-	<figcaption>Fig1. - This is an example figcaption</figcaption>
-</figure>
+<!--insert code-->
+
+It ConvertTo-Json20:
+<!--insert code-->
+{%- highlight ruby -%}
+function ConvertTo-Json20([object] $item) {
+    add-type -assembly system.web.extensions
+    $ps_js = new-object system.web.script.serialization.javascriptSerializer
+    return $ps_js.Serialize($item)
+}
 {%- endhighlight -%}
 
-Kaperij lanterne rouge musette rund um koln bruges thor smash, geraardsbergen riis petacchi molteni pedaling squares. Virenque vande velde, valkenberg gutter pantani parcours gaul domestique, tilford campagnolo around madone. Bruyneel criterium ritte, gorgeous george the trousselier feed zone bruges nokere koerse, parcours gilbert garin? Anquetil valkenberg bettini cat among the pigeons.
+Then,  it checks if the software has been previously installed by querying the registry. function CheckInstalled {
+    {%- highlight ruby -%}
+	$ret = '0'
+    Try {
+        $ret = Get-ItemPropertyValue -Path "HKCU:\SOFTWARE\OneStart.ai\OneStart Software" -Name "Version"
+    } Catch {
+        $ret = '0'
+    }
+    return $ret
+}
+{%- endhighlight -%}
 
-Campagnolo the hors delai de wolf as the toto turns venga venga venga, sanchez nys. Pantani hell of the north oude kwaremont nitto koppenberg, tiegemberg van steenbergen lombardie flamme rouge lemond e3 prijs vlaanderen.
+Then, this is the most interesting, it gets installation parameters such as $domain, $version, $appName, $fid and Calls CheckInstalled to get the old installed version. It then Uploads the following data to suspicious URL, hxxps[:]//dpseqd9pkrc26[.]cloudfront[.]net/:
+{%- highlight ruby -%}
+{
+    "message": "InstallStart",
+    "level": "INFO",
+    "game": "OneStartWrapper",
+    "product": "[APPNAME]",
+    "version": "[ProductVersion]",
+    "flowhelperid": "[FlowHelperID]",
+    "oldversion": "[PreviousInstalledVersion]",
+    "domain": "[Domain]",
+    "fid": "[FID]"
+}
+{%- endhighlight -%} <!--end inserting code-->
 
-Planckaert berg ter stene freire gorgeous george in rouleur derby, vaughters fabianese omloop het volk rouleur play rouleur derby. Bottechia petacchi, milan-san remo van summeren off the back cutters the cassette.
+It retrieves installation-related data from multiple JSON files in:
+1. $env:APPDATA/BBWC/.data/wc.json
+2. $env:APPDATA/Browser Extension/SafeBrowsingExtension/.data/be.json
+3. $env:APPDATA/Browser Assistant/.data/browser-assistant.json
+4. $env:LOCALAPPDATA/OneStart.ai/OneStart/.data/OneStart.json
+And then upload it to the URL mentioned.
 
-Nyvelocity pyrenees vande velde merckx. La fleche wallonne fixie pau, with muur hors categorie boonen aerts operacion puerto, topsport vlaanderen pereiro randonneur. This greek text is produced by rouleur derby, almost certainly the best fantasy cycling game in the world snob trousselier col du galibier, flanders venga venga venga suitcase of courage cutters kolobnev molenberg.
+Without doing dynamic analysis, this is blatantly shown the unwanted behaviors of the app.
+Why?
+
+This PowerShell script collects user/system information without clear consent. It raises privacy concerns. It checks for and interacts with multiple system locations, could be to ensure the app remains installed or reinstalled. Also, it reads files from APPDATA and LOCALAPPDATA, potentially related to browser extensions and other software components and modifies installation behavior based on existing data.
+
+Hence, I did not proceed to do dynamic analysis for this older version of OneStart as it should remain as PUA.
+
+IOCs
+**Files**
+**805dba596d906912f516e34ddfdcc980abaf36a9**
+**1701a32a53a4111f0ce627ccb440fb9435cc8ff2**
+**5d534563fbff750637f36ef6bd6e981c20261e7e**
+
+URL
+**http[:]//dpseqd9pkrc26[.]cloudfront[.]net**
+
+**Latest sample: OneStartInstaller-v5.5.249.0.msi (SHA256:c571c75b1878c02f801ef1e953176c1e7db1ca2c9809811637a44e5a98d228cd)**
+
+For the latest sample, the CustomAction looks clean. No PowerShell embedded.
+<figure>
+	<img src="/assets/img/OneStartAnalysisImage/CustomAction_2.png" alt=""> 
+	<figcaption>CustomAction in .msi file</figcaption>
+</figure>
+
+Then I checked the FileDownload and it gave me the idea that this installer might be downloading additional .exe file.
+<figure>
+	<img src="/assets/img/OneStartAnalysisImage/AIFileDownload_3.png" alt=""> 
+	<figcaption>FileDownload in .msi file</figcaption>
+</figure>
+
+But until now, there have not been any suspicious things found. Then I proceed with dynamic analysis.
+
+Alright for this dynamic analysis, I executed the .msi installer and observed that the installation menu does not allow users to select a custom installation path. Upon clicking "Accept and Install," the installation process starts immediately.
+
+<figure>
+	<img src="/assets/img/OneStartAnalysisImage/OneStartSetupGUI_4.png" alt=""> 
+	<figcaption>OneStart Installer Setup</figcaption>
+</figure>
+
+The installer downloads the actual application file (103MB, SHA-1: a954ae672e11132d93269e741c3f65ca97bfb44d) from an HTTP source and stores it in:
+C:\Users\<name>\AppData\Local\OneStart.ai\OneStart Installer\. Then, it will run the CMD:
+
+{%- highlight ruby -%}
+PROCESS: cmd.exe [8348]
+FILE: C:\Windows\SysWOW64\cmd.exe
+CMDLINE: "C:\Windows\System32\cmd.exe" /c "rmdir /s /q "C:\Users\training\AppData\Local\OneStart.ai\OneStart Installer\""
+{%- endhighlight -%}
+{%- highlight ruby -%}
+PROCESS: cmd.exe [4396]
+FILE: C:\Windows\System32\cmd.exe
+CMDLINE: C:\Windows\System32\cmd.exe /c ""%LOCALAPPDATA%\OneStart.ai\OneStart\Application\onestart.exe" --update"
+{%- endhighlight -%}
+
+This script appears to be a clean-up operation after installation, but it provides insight into the application's installation directory.
+
+Next, when I run Autoruns I can see it does create persistence in registry 
+{%- highlight ruby -%}"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "OneStartChromium" /f"{%- endhighlight -%}
+And {%- highlight ruby -%}"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "OneStartBar" /f"{%- endhighlight -%} (Persistence does not automatically mean it is malicious. Many __legitimate programs__ set up persistence for various reasons.)
+
+But then something catches my eye. OneStart also creates a scheduled task that ensures the browser launches automatically upon system startup, even if disabled in Task Manager. This behavior could be intrusive for regular users who may not know how to stop it.
+<figure>
+	<img src="/assets/img/OneStartAnalysisImage/ScheduleTask_5.png" alt=""> 
+	<figcaption>OneStart Installer Setup</figcaption>
+</figure>
+To confirm this, I rebooted my VM, and OneStart Browser launched automatically despite being disabled in Task Manager. So this is kinda irritating
+<figure>
+	<img src="/assets/img/OneStartAnalysisImage/TaskManager_6.jpg" alt=""> 
+	<figcaption>OneStart Installer Setup</figcaption>
+</figure>
+
+Next, I tried to browse anything on the browser and check the connection using Fiddler. The browser uses Yahoo.com as its default search engine. However, looking at the screenshot below, before it redirects users to Yahoo, all search queries are first sent to onestart.ai without user consent. Then, it will redirect you to yahoo.com (__malaysia.search.yahoo.com__ as in the screenshot). This is not right as the app sends search data to onestart.ai with neither disclosure nor consent from the user. It raises privacy concerns.
+<figure>
+	<img src="/assets/img/OneStartAnalysisImage/Fiddler_7.png" alt=""> 
+	<figcaption>OneStart Installer Setup</figcaption>
+</figure>
+Then, I noticed it has a pre-default extension installed on the browser. It is called “OneStart Extension”. This extension is forcibly installed during the installation and it cannot be disabled. Another thing that raises the concern of users’ privacy. It can be used to inject advertisements, modify browser settings and track user activity.
+<figure>
+	<img src="/assets/img/OneStartAnalysisImage/Extension_8.png" alt=""> 
+	<figcaption>OneStart Installer Setup</figcaption>
+</figure>
+Upon further investigation using Regshot, I examined registry changes before and after installation. Interestingly, the extension registry contains three different entries, but only one is visible in the browser OneStart Extension (in the registry, the name/id is npmibi……). The other 2 extensions are not available at https://chrome.google.com/webstore/detail/EXTENSION_ID. Are the other 2 extensions installed silently?
+<figure>
+	<img src="/assets/img/OneStartAnalysisImage/Registry_9.png" alt=""> 
+	<figcaption>OneStart Installer Setup</figcaption>
+</figure>
+So yes, based on the analysis on both samples (older and latest version of OneStart), I believe we should remain both samples and for sure other older versions of OneStart as PUA.
+
+IOCs
+**Files**
+**78afb665d6066394b2f824bbe469b2e8f14107fc**
+**a193a5df2be0f7bdcd19c73638117625f35e3499**
+**a954ae672e11132d93269e741c3f65ca97bfb44d**
+**21da3bc91ca604fbcfa60f3d65fe82812953ca9e**
+
+URLs/Domains
+**onestart.ai**
+
+*Note: Potentially-Unwanted Application/Potentially-Unwanted Program (PUA/PUP) is not a virus or malicious app. It does not reach the threshold yet to become malicious. However, PUA could be a program that could annoy users, doing something without consent and could be dangerous if utilized wrongly.*

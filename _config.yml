@@ -21,17 +21,12 @@ navigation:
       url: /index.html
     - title: About
       url: /about
-    - title: Contact
-      url: /contact
 
 social:
     github: HareezIshraf5
-    twitter: brianmaierjr
-    facebook: brianmaierjr
-    email: brimaidesigns@gmail.com
-    linkedin: brianmaierjr
+    linkedin: hareezishraf
 
 google_analytics: "UA-58263416-1"
 
 disqus:
-    shortname: brianmaierjr
+    shortname: Hareez
