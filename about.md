@@ -16,7 +16,7 @@ title: About Author
   </p>
 
   <p>
-    Frankly speaking, I am still green in the cybersecurity industry and learning every day—especially when it comes to reverse engineering.
+    Frankly speaking, I am still green in the cybersecurity industry and learning every day especially when it comes to reverse engineering.
     This blog is my little corner to share findings and experiences for educational purposes.
   </p>
 
