@@ -43,7 +43,7 @@ Next, we jump into the analysis of the Ikov.jar file. When analyzing a malicious
 
 After unzipping the file, I opened up MANIFEST.MF and found this:
 
-{%- highlight ruby -%}
+{%- highlight java -%}
 Manifest-Version: 1.0
 Main-Class: FileDownloader
 {%- endhighlight -%}
@@ -67,7 +67,7 @@ When I opened the .class file in VS Code, it automatically decompiled it using F
 Before even digging into the actual code, I like to scroll through the list of import statements. It gives a quick idea of what the malware might be doing.
 
 Here’s what I saw:
-{%- highlight ruby -%}
+{%- highlight java -%}
 import java.awt.Robot;
 import java.awt.Toolkit;
 import javax.swing.JOptionPane;
