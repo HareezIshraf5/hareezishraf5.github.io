@@ -11,7 +11,7 @@ Sample can downloaded from <a href="https://www.virustotal.com/gui/file/982e47f6
 
 **SHA256:982e47f604b9b5cbb710f9d6bad16a3e44b0122c44dede726729b843ba357414a**
 
-**Attack Flow Overview**
+**Attack Flow Overview**<br>
 Before diving into the technical details, let’s take a look at the overall infection chain. The diagram below illustrates how users are lured into running a seemingly harmless .jar file, which then kicks off a series of malicious actions including data theft, persistence and stealthy second-stage payload delivery.
 
 <figure>
