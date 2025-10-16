@@ -11,7 +11,7 @@ Sample can be downloaded from <a href="https://www.virustotal.com/gui/file/261e4
 
 **SHA256:261e4c7dc85f29864df63741d622789b315184b6a229fcdb4cf1c39d91d3a7f8**
 
-Static Analysis
+#### <u>Static Analysis</u>
 
 Let’s start with basic static analysis first. So, since this file is PE32 executable (GUI) Intel 80386, for MS Windows, I proceed to use FLOSS to see the strings embedded in the sample, just to get the basic idea
 
@@ -180,7 +180,7 @@ Here’s the list of commands:
 
 There is one function I named as fn_notsure() because I am not completely sure what it is doing. But I see it downloads a file from a remote server using fn_DownloadFileFromServer() and the file looks like it is encrypted. I still have not found the actual C2 server yet, so next I will go for dynamic analysis to see what happens at runtime and hopefully figure out what I missed and where the C2 is hiding
 
-Dynamic Analysis
+#### <u>Dynamic Analysis</u>
 <figure>
 	<img src="/assets/img/Bibot/18.png" alt=""> 
 	<figcaption>Process Hacker</figcaption>
