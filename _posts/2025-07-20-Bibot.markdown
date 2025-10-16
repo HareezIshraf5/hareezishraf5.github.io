@@ -1,0 +1,234 @@
+---
+layout: post
+title:  "NionSpy RAT: Static & Dynamic Analysis Walkthrough of .exe Hijacker"
+date:   2025-07-20
+---
+
+<p class="intro"><span class="dropcap">R</span>AT is such a famous type of malware, short for Remote Access Trojan, and it has remained a favorite tool among cybercriminals for more than a decade. From old-school backdoors to modern modular threats, the concept remains the same, full remote control of the victim system. In this analysis, we will go through static and dynamic analysis to uncover its persistence tricks, command handling and infostealer features.</p>
+
+Sample can be downloaded from <a href="https://www.virustotal.com/gui/file/261e4c7dc85f29864df63741d622789b315184b6a229fcdb4cf1c39d91d3a7f8
+" target="_blank">VirusTotal</a>
+
+**SHA256:261e4c7dc85f29864df63741d622789b315184b6a229fcdb4cf1c39d91d3a7f8**
+
+Static Analysis
+
+Let’s start with basic static analysis first. So, since this file is PE32 executable (GUI) Intel 80386, for MS Windows, I proceed to use FLOSS to see the strings embedded in the sample, just to get the basic idea
+
+<figure>
+	<img src="/assets/img/Bibot/1.png" alt=""> 
+	<figcaption>Strings Output from FLOSS</figcaption>
+</figure>
+
+From here, we can see, we have pulled some interesting strings which can be divided into several parts:
+
+1\. Windows Registry locations used for persistence or file association hijacking. It may be used to hijack .exe file so that malware runs when any executable is launched.
+```powershell
+Software\Microsoft\Windows\CurrentVersion\Run
+Software\Classes\.exe\shell\open\command
+Software\Classes\%s
+Software\Classes\%s\DefaultIcon
+Software\Classes\%s\shell\open\command
+Software\Classes\%s\shell\runas\command
+Software\Classes\.exe
+Software\Classes\.exe\DefaultIcon
+Software\Classes\.exe\shell\runas\command
+```
+
+2\. Check the OS version and system root.
+```powershell
+SYSTEMROOT
+Windows 8 build %i
+Windows 7 build %i
+Windows Vista build %i
+Windows Server 2003 build %i
+Windows XP build %i
+Windows 2000 build %i
+Windows %i.%i build %i
+```
+3\. HTTP Upload. 
+Classic HTTP multipart POST pattern for uploading stolen data or files. Several infostealers will use this technique.
+
+file.raw could be the stolen data
+```powershell
+POST
+HTTP/1.0
+---------------------------uploader
+Host: %s
+Content-Type: multipart/form-data; boundary=%s
+--%s
+Content-Disposition: form-data; name="%s"; filename="file.raw"
+Content-Type: %s
+```
+<figure>
+	<img src="/assets/img/Bibot/2.png" alt=""> 
+	<figcaption>AV Strings from FLOSS</figcaption>
+</figure>
+
+Next, it gives a bigger picture that the sample is likely checking for installed Antivirus software or whether it is running in a sandbox environment in order to evade detection.
+
+<figure>
+	<img src="/assets/img/Bibot/3.png" alt=""> 
+	<figcaption></figcaption>
+	<img src="/assets/img/Bibot/4.png" alt=""> 
+	<figcaption>Strings related to InfoStealer</figcaption>
+</figure>
+
+Next, I found the strings that strongly suggest infostealer-like behavior, indicating the sample is capable of recording audio, capturing screenshots, and accessing the webcam (from the screenshot, could be more capabilities).
+
+Next before we move to the next step, I checked the sample on VirusTotal and found that it is associated with NionSpy malware. The file is named quakbot though, but YARA rule on VirusTotal matched it to NionSpy.
+
+<figure>
+	<img src="/assets/img/Bibot/5.png" alt=""> 
+	<figcaption>VirusTotal</figcaption>
+</figure>
+
+The import table does not show any signs of typical process injection-related APIs such as OpenProcess, VirtualAlloc, UnmapViewOfSection, etc. 
+
+<figure>
+	<img src="/assets/img/Bibot/6.png" alt=""> 
+	<figcaption>Functions might be used</figcaption>
+</figure>
+
+However, imports from WININET.dll and WSOCK32.dll indicate that the sample establishes network connections and communicates with remote hosts.
+
+WINMM.dll is for the audio recording
+
+<figure>
+	<img src="/assets/img/Bibot/7.png" alt=""> 
+	<figcaption>PE Studio</figcaption>
+</figure>
+
+We may also use PEStudio for better visibility.
+
+Next, let’s jump to IDA
+<figure>
+	<img src="/assets/img/Bibot/8.png" alt=""> 
+	<figcaption>Main Function</figcaption>
+</figure>
+
+The main function shows that the malware uses CreateThread to run multiple tasks at the same time (I have renamed the functions for easier analysis).
+
+Let’s look at the interesting functions, as there are too many to cover them all.
+<figure>
+	<img src="/assets/img/Bibot/9.png" alt=""> 
+	<figcaption>Main Function</figcaption>
+</figure>
+
+1. For these 3 functions highlighted, it builds a hidden copy of the malware in the %TEMP% directory and executes it as a new process using CreateProcessA.(Self-replicate)
+2. Then, it checks if a /START argument points to an AV-related path. If not, it may merge files and execute the target using CreateProcessA. 
+3. Next, it checks if known antivirus or sandbox-related paths exist. If a sandbox is detected, the malware exits immediately. (Indicator of anti sandbox)
+
+<figure>
+	<img src="/assets/img/Bibot/10.png" alt=""> 
+</figure>
+<figure>
+	<img src="/assets/img/Bibot/11.png" alt=""> 
+	<figcaption> fn_ScanAndInfectExecutables()</figcaption>
+</figure>
+
+This part is interesting. The function **fn_ScanAndInfectExecutables()** scans all available external drives like USB and network for .exe files. When found, it injects the malware into those .exe using a merging routine, allowing the malware to spread when the infected files are executed on other systems. On that screenshot, GetDriveTypeA =2 and 4 means removable and network.
+
+<figure>
+	<img src="/assets/img/Bibot/12.png" alt=""> 
+</figure>
+
+Then, let’s take a look at this function. The malware achieves persistence through the function fn_InstallAndPersisrentMalware().
+
+<figure>
+	<img src="/assets/img/Bibot/13.png" alt=""> 
+	<figcaption> fn_InstallAndPersisrentMalware()</figcaption>
+</figure>
+
+Specifically, if the operating system version is Windows XP or earlier (version < 6)(6 = XP), it creates a registry Run key under: HKCU \Software\Microsoft\Windows\CurrentVersion\Run The key value is set to point to the dropped copy of the malware, ensuring the malware automatically executes each time the user logs into Windows.
+
+<figure>
+	<img src="/assets/img/Bibot/14.png" alt=""> 
+	<figcaption>fn_PersistentInfectionLoop()</figcaption>
+	<img src="/assets/img/Bibot/15.png" alt=""> 
+	<figcaption>fn_ModifyRegistryForPersistence()</figcaption>
+</figure>
+But if NOT Windows XP and earlier, then it creates a background thread fn_PersistentInfectionLoop() that continuously calls fn_ModifyRegistryForPersistence(). This function hijacks the .exe file association in the registry under: HKCU \Software\Classes\.exe So any time .exe file is executed, the malware runs first, ensuring persistent execution.
+
+<figure>
+	<img src="/assets/img/Bibot/16.png" alt=""> 
+   <figcaption>fn_wrap_C2Command_handler()</figcaption>
+	<img src="/assets/img/Bibot/17.png" alt=""> 
+	<figcaption>fn_CommandHandler()</figcaption>
+</figure>
+
+Next, there are 2 interesting functions
+1. fn_wrap_C2Command_handler()
+Communicates with the attacker's server and retrieves commands from the C2 server.
+2. fn_CommandHandler()
+Handled retrieved commands.
+Here’s the list of commands:
+
+| Command     | Description                                             |
+|-------------|---------------------------------------------------------|
+| ls          | List files in a specified directory                     |
+| upload      | Upload a file from the victim to the C2 server          |
+| download    | Download a file from the C2 server to the victim        |
+| exec_show   | Execute a file visibly (shows window)                   |
+| exec_hide   | Execute a file silently (no window shown)               |
+| reboot      | Reboot the victim machine immediately                   |
+| msgbox      | Display a message box on victim's screen                |
+| backconnect | Open a reverse shell (backconnect)                      |
+| recorder    | Record audio from victim’s microphone                   |
+| screenshot  | Capture and upload a screenshot                         |
+| webcam      | Capture image or video from victim’s webcam             |
+
+There is one function I named as fn_notsure() because I am not completely sure what it is doing. But I see it downloads a file from a remote server using fn_DownloadFileFromServer() and the file looks like it is encrypted. I still have not found the actual C2 server yet, so next I will go for dynamic analysis to see what happens at runtime and hopefully figure out what I missed and where the C2 is hiding
+
+Dynamic Analysis
+<figure>
+	<img src="/assets/img/Bibot/18.png" alt=""> 
+	<figcaption>Process Hacker</figcaption>
+	<img src="/assets/img/Bibot/19.png" alt=""> 
+	<figcaption>Appdata location</figcaption>
+</figure>
+
+Using Fiddler, I managed to find the C2 server finally.
+<figure>
+	<img src="/assets/img/Bibot/20.png" alt=""> 
+	<figcaption>Fiddler</figcaption>
+</figure>
+The malware communicates with hxxp[:]//nwoccs[.]zapto[.]org/odin/si[.]php, confirmed during dynamic analysis.
+
+Note: I noticed the location and the name of the 2nd payload dropped is randomized. If I try to run again on a clean snapshot then it will drop on different location with different name.
+
+I tried for the second time (this time the dropped payload name is lsassys.exe) and checked the procmon. Here’s what I got:
+<figure>
+	<img src="/assets/img/Bibot/21.png" alt=""> 
+	<figcaption>Procmon</figcaption>
+</figure>
+Any programs that I run, will be executed under the 2nd dropped payload.
+
+So the flow is like this:
+Original malware.exe (bibot.exe in this case) -> download/drop 2nd payload (location/filename is randomized)-> become parent to legit .exe file when executed
+
+Now, let’s check persistence using Autoruns
+<figure>
+	<img src="/assets/img/Bibot/22.png" alt=""> 
+	<figcaption>Autoruns</figcaption>
+</figure>
+
+I saw it create persistence in HKCU\Software\Classes\.exe with command HKCU\Software\Classes\.exe. And that answers the question why it becomes parent to every new legit process. The malware achieves persistence and execution hijack by modifying HKCU\Software\Classes\.exe (we see earlier from FLOSS and in IDA), redirecting all .exe launches through itself (lsassys.exe). This causes all legitimate executables to run as child processes of the malware, enabling stealthy monitoring or injection.
+
+So to summarize, the bibot.exe (from the original sample) has capability of RAT which includes:
+1. Capturing Screenshot
+2. Capturing Audio from Mic
+3. Capturing image from Webcam
+4. Getting Info of infected devices
+5. Download another malware
+
+For the 2nd dropped payload, I did check using FLOSS and it seems it does almost the same thing as the original payload.
+
+IOCs:
+261e4c7dc85f29864df63741d622789b315184b6a229fcdb4cf1c39d91d3a7f8 
+HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run 
+HKCU \Software\Classes\.exe 
+HKCU\SOFTWARE\Classes\.exe\shell\open\command 
+"C:\Users\mare\AppData\Roaming\Microsoft\SysWOW_32\lsassys.exe" /START "%1" 
+%* 
+nwoccs[.]zapto[.]org
