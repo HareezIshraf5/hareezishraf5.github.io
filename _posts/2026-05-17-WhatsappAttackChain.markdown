@@ -15,7 +15,7 @@ Before we jump deeply into technical details, let’s take a look at the overall
 	<figcaption>Attack Overview</figcaption>
 </figure>
 
-
+<!-- Stage 1 -->
 <div align="center">
     <h4><b>Stage 1: Payload Delivery and Execution via WhatsApp</b></h4>
 </div>
@@ -52,6 +52,8 @@ The VBS starts by initializing objects required for shell execution and filesyst
 Then, it checks whether the designated working directory exists and creates it if necessary. After creation, the folder attribute is modified to make it hidden, reducing visibility to the user and helping conceal malicious activity and the payloads. (Attributes=2 means File or folder is hidden). So, `C:\ProgramData\58299\\` will be invisible.
 
 Next, it verifies whether specific files already exist in the working directory. If absent, it copies legitimate Windows binaries into the newly created directory while renaming them to misleading filenames. Specifically, `curl.exe` is copied and saved as `winhttp.dll` and `bitsadmin.exe` is copied  and saved as `svchost.exe`. 
+
+This is a classic **Living off the Land (LOTL)** technique utilizing **LOLBins (Living off the Land Binaries)**. Instead of bringing their own custom download tool which would easily detected by EDR or AV, the attackers abuse legitimate, built-in Windows utilities (curl.exe and bitsadmin.exe). To further complicate detection, they perform Masquerading (MITRE ATT&CK T1036) by renaming these trusted tools to winhttp.dll and svchost.exe.
 
 <small>_Note: The malware renames legitimate Windows tools to look like normal system files. This helps it blend into the environment and reduces the chance of users or security tools noticing suspicious activity_.</small>
 
@@ -91,6 +93,7 @@ BITSAdmin (renamed as svchost.exe)
 
 Note: Chr(34) = “ from ascii
 
+The *MultiModeDownloader* function is essentially a built-in LOLBAS execution matrix. By rotating through four distinct native Windows mechanisms (*curl*, *BITSAdmin*, *certutil*, and *PowerShell*), the malware ensures fallback reliability. If an EDR block style restricts one LOLBin (blocking certutil outbound web requests), the script seamlessly cycles to the next LOTL method to pull down the next-stage payload.
 
 <figure>
 	<img src="/assets/img/Whatsapp Attack Chain/Stage 1/3.png" alt=""> 
@@ -212,6 +215,8 @@ Important commands:
 - /i → install MSI package
 - /quiet → execute silently without UI
 - /norestart → prevent automatic reboot
+
+`msiexec.exe` is a highly leveraged LOLBin commonly abused for defensive evasion. Because it is a trusted Microsoft process responsible for system installations, running the malicious package silently through it allows the installation phase to bypass standard execution restrictions and run under a highly trusted context.
 
 The script then uses ShellExecute() with the runas verb to request admin privileges and execute the MSI in hidden mode.
 
